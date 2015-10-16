@@ -11,6 +11,7 @@ from openerp.tools.misc import DEFAULT_SERVER_DATETIME_FORMAT, ustr
 from ast import literal_eval
 from openerp.tools.translate import _
 from openerp.exceptions import UserError
+import openerp
 
 
 class SignupError(Exception):
@@ -168,6 +169,18 @@ class res_users(osv.Model):
         'state': fields.function(_get_state, string='Status', type='selection',
                                  selection=[('new', 'Never Connected'), ('active', 'Connected')]),
     }
+
+    def try_login(self, email):
+        # todo 要不要根据status来决策
+        try:
+            with self.pool.cursor() as cr:
+                res = self.search(cr, openerp.SUPERUSER_ID, [('login', '=', email)])
+                if res:
+                    user_id = res[0]
+        except openerp.exceptions.AccessDenied:
+            user_id = False
+        return user_id
+
 
     def signup(self, cr, uid, values, token=None, context=None):
         """ signup a user, to either:
